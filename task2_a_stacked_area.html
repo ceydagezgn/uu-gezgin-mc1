@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Oceanus Folk's Influence - Stacked Area Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    html, body, #main {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="main"></div>
+
+  <script>
+    fetch("task2_a.json")
+      .then(response => response.json())
+      .then(rawData => {
+        const genreGroups = {
+          "Dream Pop": "Pop",
+          "Synthpop": "Pop",
+          "Indie Pop": "Pop",
+          "Indie Rock": "Rock",
+          "Alternative Rock": "Rock",
+          "Post-Apocalyptic Folk": "Folk",
+          "Desert Rock": "Rock",
+          "Jazz Surf Rock": "Rock",
+          "Doom Metal": "Metal",
+          "Speed Metal": "Metal",
+          "Symphonic Metal": "Metal",
+          "Darkwave": "Electronic",
+          "Synthwave": "Electronic",
+          "Space Rock": "Rock",
+          "Americana": "Folk",
+          "Indie Folk": "Folk",
+          "Emo/Pop Punk": "Punk"
+        };
+
+        const allYears = [...new Set(rawData.map(d => d.year))].sort((a, b) => a - b);
+
+        const groupMap = {};
+        const tooltipData = {};
+        const ofDataMap = new Map(); 
+
+        rawData.forEach(d => {
+          const year = d.year;
+          const subgenre = d.genre;
+          const count = d.count;
+
+          if (subgenre === "Oceanus Folk") {
+            ofDataMap.set(year, count);
+            return;
+          }
+
+          const group = genreGroups[subgenre] || "Other";
+
+          if (!groupMap[group]) groupMap[group] = new Array(allYears.length).fill(0);
+          const yearIndex = allYears.indexOf(year);
+          if (yearIndex !== -1) {
+            groupMap[group][yearIndex] += count;
+          }
+
+          if (!tooltipData[year]) tooltipData[year] = {};
+          if (!tooltipData[year][group]) tooltipData[year][group] = {};
+          tooltipData[year][group][subgenre] = (tooltipData[year][group][subgenre] || 0) + count;
+        });
+
+        const series = Object.keys(groupMap).map(group => ({
+          name: group,
+          type: 'line',
+          stack: 'total',
+          areaStyle: {},
+          emphasis: { focus: 'series' },
+          data: groupMap[group]
+        }));
+
+      
+        const ofSeriesData = allYears.map(year => ofDataMap.get(year) || 0);
+
+        series.push({
+          name: "Oceanus Folk works",
+          type: "line",
+          symbol: "circle",
+          lineStyle: {
+            type: "dashed",
+            color: "#666",
+            width: 2
+          },
+          itemStyle: {
+            color: "#666"
+          },
+          emphasis: {
+            focus: "series"
+          },
+          data: ofSeriesData
+        });
+
+        const chart = echarts.init(document.getElementById('main'));
+        const option = {
+          title: {
+            text: "Oceanus Folk's Influence",
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'cross' },
+            formatter: function (params) {
+              const year = params[0].axisValue;
+              let tooltip = `<strong>${year}</strong><br/>`;
+
+              const groupsInYear = tooltipData[year];
+              if (groupsInYear) {
+                for (const group of Object.keys(groupsInYear)) {
+                  tooltip += `<u><b>${group}</b></u><br/>`;
+                  const subgenres = groupsInYear[group];
+                  for (const sub in subgenres) {
+                    tooltip += `– ${sub}: ${subgenres[sub]}<br/>`;
+                  }
+                }
+              }
+
+              const ofEntry = params.find(p => p.seriesName === "Oceanus Folk works");
+              if (ofEntry) {
+                tooltip += `<hr style="margin:4px 0;"><b>Oceanus Folk </b>: ${ofEntry.data}<br/>`;
+              }
+
+              return tooltip;
+            }
+          },
+          legend: {
+            top: 30
+          },
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: allYears
+          },
+          yAxis: {
+            type: 'value',
+            name: 'Number of works'
+          },
+          series: series
+        };
+
+        chart.setOption(option);
+      });
+  </script>
+</body>
+</html>

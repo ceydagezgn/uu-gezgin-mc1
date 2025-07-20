@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Oceanus Folk Artists - Parallel Coordinates</title>
+  <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #f4f6f9;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #plot {
+      width: 100vw;
+      height: 90vh;
+    }
+    #legend {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+      border-radius: 4px;
+      border: 1px solid #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<div id="plot"></div>
+<div id="legend">
+  <div class="legend-item"><div class="legend-color" style="background-color: rebeccapurple;"></div>Maya Jensen</div>
+  <div class="legend-item"><div class="legend-color" style="background-color: deepskyblue;"></div>Lila Hartman</div>
+  <div class="legend-item"><div class="legend-color" style="background-color: gold;"></div>Sophie Ramirez</div>
+</div>
+
+<script>
+const data = [{
+  type: 'parcoords',
+  line: {
+    color: [0, 1, 2],
+    colorscale: [
+      [0.00, 'rebeccapurple'],   // Maya
+      [0.50, 'deepskyblue'],     // Lila
+      [1.00, 'gold']             // Sophie
+    ],
+    showscale: false,
+    cmin: 0,
+    cmax: 2
+  },
+  dimensions: [
+    {label: 'Unique Works', values: [0.131579, 0.078947, 0.131579]},
+    {label: 'Role Score', values: [0.091667, 0.05, 0.075]},
+    {label: 'Works (Last 5 Years)', values: [0.071429, 0.0, 0.071429]},
+    {label: 'Notable Work Count', values: [0.178571, 0.107143, 0.178571]},
+    {label: 'Notable Role Score', values: [0.134146, 0.073171, 0.109756]},
+    {label: 'Notable (Last 5 Years)', values: [0.090909, 0.0, 0.090909]},
+    {label: 'Total Genres', values: [0.090909, 0.090909, 0.090909]},
+    {label: 'Oceanus Folk Ratio', values: [1.0, 1.0, 1.0]},
+    {label: 'Unique Collaborators', values: [0.116279, 0.081395, 0.139535]},
+    {label: 'Inspired Works', values: [0, 0, 0]}
+  ]
+}];
+
+const layout = {
+  margin: {t: 50, l: 80, r: 80, b: 50},
+  paper_bgcolor: '#ffffff',
+  plot_bgcolor: '#ffffff',
+};
+
+Plotly.newPlot('plot', data, layout);
+</script>
+
+</body>
+</html>

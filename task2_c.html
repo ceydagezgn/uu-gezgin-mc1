@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Oceanus Folk’s Inspirations and the Rise of Sailor Shift</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    html, body, #main {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="main"></div>
+
+  <script>
+    fetch("task2_c.json")
+      .then(response => response.json())
+      .then(rawData => {
+        const genreGroups = {
+          "Alternative Rock": "Rock",
+          "Indie Rock": "Rock",
+          "Psychedelic Rock": "Rock",
+          "Southern Gothic Rock": "Rock",
+          "Jazz Surf Rock": "Rock",
+          "Space Rock": "Rock",
+          "Desert Rock": "Rock",
+          "Blues Rock": "Rock",
+
+          "Dream Pop": "Pop",
+          "Synthpop": "Pop",
+          "Indie Pop": "Pop",
+
+          "Indie Folk": "Folk",
+          "Americana": "Folk",
+          "Avant-Garde Folk": "Folk",
+          "Celtic Folk": "Folk",
+          "Post-Apocalyptic Folk": "Folk",
+
+          "Doom Metal": "Metal",
+          "Symphonic Metal": "Metal",
+
+          "Synthwave": "Electronic",
+          "Lo-Fi Electronica": "Electronic",
+
+          "Emo/Pop Punk": "Punk", 
+          
+          
+        };
+        // 🎨 Renk eşlemesi: Grup ismine göre renk
+        const genreColors = {
+        "Metal": "#5470C6",
+        "Folk": "#91CC75",
+        "Rock": "#FAC858",
+        "Pop": "#EE6666",
+        "Electronic": "#73C0DE",
+        "Punk": "#3BA272"
+        };
+
+
+        const allYears = [...new Set(rawData.map(d => d.year))].sort((a, b) => a - b);
+
+        const groupMap = {};
+        const tooltipData = {};
+        const ofData = new Map();
+        const sailorData = new Map();
+
+        rawData.forEach(d => {
+          const year = d.year;
+          const subgenre = d.genre;
+          const count = d.count;
+
+          if (subgenre === "Oceanus Folk") {
+            ofData.set(year, count);
+            return;
+          }
+
+          if (subgenre === "Sailor Oceanus Folk") {
+            sailorData.set(year, count);
+            return;
+          }
+
+          const group = genreGroups[subgenre];
+          if (!group) return;
+
+          if (!groupMap[group]) groupMap[group] = new Array(allYears.length).fill(0);
+          const yearIndex = allYears.indexOf(year);
+          if (yearIndex !== -1) {
+            groupMap[group][yearIndex] += count;
+          }
+
+          if (!tooltipData[year]) tooltipData[year] = {};
+          if (!tooltipData[year][group]) tooltipData[year][group] = {};
+          tooltipData[year][group][subgenre] = (tooltipData[year][group][subgenre] || 0) + count;
+        });
+
+        const series = Object.keys(groupMap).map(group => ({
+          name: group,
+          type: 'line',
+          stack: 'total',
+          areaStyle: {},
+          emphasis: { focus: 'series' },
+          data: groupMap[group],
+          lineStyle: { color: genreColors[group] },
+          itemStyle: { color: genreColors[group] }
+        }));
+
+
+        const ofSeries = allYears.map(year => ofData.get(year) || 0);
+        const sailorSeries = allYears.map(year => sailorData.get(year) || 0);
+
+        series.push({
+          name: "Oceanus Folk works",
+          type: "line",
+          symbol: "circle",
+          lineStyle: {
+            type: "dashed",
+            color: "#111",
+            width: 2
+          },
+          itemStyle: {
+            color: "#111"
+          },
+          emphasis: {
+            focus: "series"
+          },
+          data: ofSeries
+        });
+
+        series.push({
+          name: "Sailor's Oceanus Folk works",
+          type: "line",
+          symbol: "triangle",
+          symbolSize: 10,
+          lineStyle: {
+            type: "solid",
+            color: "#e74c3c",
+            width: 3
+          },
+          itemStyle: {
+            color: "#e74c3c"
+          },
+          emphasis: {
+            focus: "series"
+          },
+          data: sailorSeries
+        });
+
+        const chart = echarts.init(document.getElementById('main'));
+        const option = {
+          
+          title: {
+            text: "Oceanus Folk’s Inspirations and the Rise of Sailor Shift",
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'cross' },
+            formatter: function (params) {
+              const year = params[0].axisValue;
+              let tooltip = `<strong>${year}</strong><br/>`;
+
+              const groupsInYear = tooltipData[year];
+              if (groupsInYear) {
+                for (const group of Object.keys(groupsInYear)) {
+                  tooltip += `<u><b>${group}</b></u><br/>`;
+                  const subgenres = groupsInYear[group];
+                  for (const sub in subgenres) {
+                    tooltip += `– ${sub}: ${subgenres[sub]}<br/>`;
+                  }
+                }
+              }
+
+              const ofEntry = params.find(p => p.seriesName === "Oceanus Folk works");
+              const sailorEntry = params.find(p => p.seriesName === "Sailor's Oceanus Folk works");
+
+              if (ofEntry) {
+                tooltip += `<hr style="margin:4px 0;"><b>Oceanus Folk</b>: ${ofEntry.data}<br/>`;
+              }
+              if (sailorEntry) {
+                tooltip += `<b>Sailor</b>: ${sailorEntry.data}<br/>`;
+              }
+
+              return tooltip;
+            }
+          },
+          legend: {
+            top: 30
+          },
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: allYears
+          },
+          yAxis: {
+            type: 'value',
+            name: 'Number of works'
+          },
+          series: series
+        };
+
+        chart.setOption(option);
+      });
+  </script>
+</body>
+</html>

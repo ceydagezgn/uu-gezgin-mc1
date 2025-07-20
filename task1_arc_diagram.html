@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sailor Arc Diagram – Influence & Collaboration</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+      padding: 3px;
+      margin-top: 0; 
+    }
+    .checkboxes {
+      margin: 10px 0;
+    }
+    button {
+      background-color: #e9660ec9;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #a84300;
+    }
+    .tooltip {
+      position: absolute;
+      background: white;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      pointer-events: none;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transition: opacity 0.2s;
+      max-width: 300px;
+      line-height: 1.4;
+    }
+    .question-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .question-box {
+      flex: 1 1 48%;
+      min-width: 300px;
+    }
+
+    .italic-note {
+      font-style: italic;
+      font-size: 13px;  
+      color: #444;
+      max-width: 700px;
+      margin-top: -6px;
+      margin-bottom: 12px;
+    }
+
+    .bar-label {
+      font-size: 8px;
+      text-anchor: end;
+      fill: #333;
+    }
+    .legend {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 13px;
+      background-color: #f9f9f9;
+      position: absolute;
+      top: 250px;
+      right: 40px;
+      max-width: 240px;
+    }
+    .legend h4 {
+      margin-top: 0;
+      font-size: 14px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    hr {
+      margin: 20px 0;
+      border: none;
+      border-top: 1px solid #ccc;
+    }
+    .section-divider {
+      width: 58%;            
+      margin: 30px 0;     
+      border: none;          
+      border-top: 1px solid #bbb; 
+    }
+    .year-selection {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;         
+      gap: 10px;               
+      margin-bottom: 10px;     
+    }
+    input[type="checkbox"],
+    input[type="radio"] {
+    accent-color: #e9660e;
+    }
+    .divider-vertical {
+      width: 1px;
+      background-color: #ccc;
+      height: 100%;        
+      min-height: 180px;   
+      align-self: stretch; 
+    }
+
+    .divider-horizontal {
+      height: 1px;
+      background-color: #ccc;
+      margin: 20px 0;
+    }
+
+  </style>
+</head>
+<body>
+
+<h2>Sailor's Influencers and Collaborators</h2>
+<div class="year-selection">
+  <button id="selectAllYears">All Years</button>
+  <div class="checkboxes" id="yearFilter"></div>
+</div>
+
+
+<div class="question-container" style="display: flex; gap: 40px; align-items: flex-start;">
+  
+  <div class="left-column" style="flex: 1;">
+    
+    <!--Question 1 -->
+    <div class="question-box">
+      <h4>🎯 a. Who has influenced Sailor the most?</h4>
+      <p class="italic-note">
+        Nodes on the left show people who influenced Sailor. The arc thickness and bars underneath indicate how many times Sailor was influenced by each person.
+      </p>
+
+      <h4>Filter by Influence Number (Left Side)</h4>
+      <div class="checkboxes" id="influenceFilter">
+        <label><input type="radio" name="influence" value="0" checked> All</label>
+        <label><input type="radio" name="influence" value="2"> 2+</label>
+        <label><input type="radio" name="influence" value="3"> 3+</label>
+        <label><input type="radio" name="influence" value="4"> 4+</label>
+      </div>
+    </div>
+
+    
+    <div class="divider-horizontal"></div>
+
+    <!--Question 3 -->
+    <div class="question-box">
+      <h4>🌊 c. How has she influenced collaborators of the broader Oceanus Folk community?</h4>
+      <p class="italic-note">
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span style="display:inline-block; width:10px; height:10px; background:#aaa; border-radius:50%;"></span>
+          <span style="color:#aaa;">Gray node</span> = Regular individual (no notable change after collaboration)
+        </span><br/>
+
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span style="display:inline-block; width:10px; height:10px; background:#9b59b6; border-radius:50%;"></span>
+          <span style="color:#9b59b6;">Purple node</span> = Individuals whose Oceanus Folk and notable work output increased after working with Sailor
+        </span><br/>
+
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <span style="display:inline-block; width:10px; height:10px; background:#000; border-radius:50%;"></span>
+          <span style="color:#000;">Black node</span> = Sailor Shift
+        </span>
+      </p>
+    </div>
+  </div>
+
+  
+  <div class="divider-vertical"></div>
+
+  <!--Question 2 -->
+  <div class="right-column" style="flex: 1;">
+    <div class="question-box">
+      <h4>🤝 b. Who did Sailor collaborate with directly or indirectly?</h4>
+      <p class="italic-note">
+        <span style="color:#2ecc71;">Level 1</span>: Green arcs and bars represent direct collaboration with Sailor.<br/>
+        <span style="color:#f1c40f;">Level 2</span>: Yellow arcs and bars represent indirect collaboration — individuals who collaborated with Sailor's direct collaborators, but not with Sailor herself.
+      </p>
+
+      <h4>Filter by Collaboration Number (Right Side)</h4>
+      <div class="checkboxes" id="collabFilter">
+        <label><input type="radio" name="collab" value="0" checked> All</label>
+        <label><input type="radio" name="collab" value="2"> 2+</label>
+        <label><input type="radio" name="collab" value="3"> 3+</label>
+        <label><input type="radio" name="collab" value="4"> 4+</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<svg width="1600" height="900"></svg>
+<div class="tooltip"></div>
+<script>
+const svg = d3.select("svg");
+const width = +svg.attr("width");
+const height = +svg.attr("height");
+const arcY = 400;
+const tooltip = d3.select(".tooltip");
+
+d3.json("task1_data.json").then(data => {
+  const allYears = [...new Set(data.links.map(d => d.year))].sort((a, b) => a - b);
+  const yearFilter = d3.select("#yearFilter");
+
+  allYears.forEach(year => {
+    const label = yearFilter.append("label");
+    label.append("input")
+      .attr("type", "checkbox")
+      .attr("value", year)
+      .property("checked", true)
+      .on("change", draw);
+    label.append("span").text(year);
+  });
+
+  d3.select("#selectAllYears").on("click", () => {
+    const inputs = document.querySelectorAll("#yearFilter input");
+    const allChecked = [...inputs].every(cb => cb.checked);
+    inputs.forEach(cb => cb.checked = !allChecked);
+    draw();
+  });
+
+  function getFirstYearOfInteraction(id, direction) {
+    const relevant = data.links.filter(d =>
+      (direction === "in" && d.target.trim() === "Sailor" && d.source.trim() === id) ||
+      (direction === "out" && d.source.trim() === "Sailor" && d.target.trim() === id)
+    );
+    return relevant.length > 0 ? d3.min(relevant, d => d.year) : null;
+  }
+
+  function getSelectedYears() {
+    return Array.from(document.querySelectorAll("#yearFilter input:checked")).map(i => +i.value);
+  }
+
+  function getInfluenceThreshold() {
+    return +document.querySelector('input[name="influence"]:checked')?.value || 0;
+  }
+
+  function getCollabThreshold() {
+    return +document.querySelector('input[name="collab"]:checked')?.value || 0;
+  }
+
+  function draw() {
+    svg.selectAll("*").remove();
+    const selectedYears = getSelectedYears();
+    const influenceThreshold = getInfluenceThreshold();
+    const collabThreshold = getCollabThreshold();
+    const filteredLinks = data.links.filter(d => selectedYears.includes(d.year));
+    const arcs = [];
+
+    const q1Grouped = d3.group(
+      filteredLinks.filter(d => d.sourceDataset === "q1"),
+      d => d.source,
+      d => d.target
+    );
+
+    q1Grouped.forEach((targets, source) => {
+      targets.forEach((links, target) => {
+        const yearWeights = {};
+        links.forEach(l => {
+          yearWeights[l.year] = (yearWeights[l.year] || 0) + (l.weight || 1);
+        });
+        const total = Object.values(yearWeights).reduce((a, b) => a + b, 0);
+        if (total >= influenceThreshold) {
+          arcs.push({
+            source,
+            target,
+            value: total,
+            years: yearWeights,
+            sourceDataset: "q1"
+          });
+        }
+      });
+    });
+
+    const q2Grouped = d3.rollups(
+      filteredLinks.filter(d => d.sourceDataset === "q2"),
+      v => ({
+        total: d3.sum(v, d => d.value || d.weight || 1),
+        years: v.map(d => d.year)
+      }),
+      d => d.source,
+      d => d.target
+    );
+
+    const allNodes = data.nodes;
+    const centerX = width / 2;
+    const centerNode = allNodes.find(d => d.id.trim() === "Sailor");
+    let leftNodes = allNodes.filter(d => d.sourceDataset === "q1" && d.id !== "Sailor");
+    let rightNodes = allNodes.filter(d => d.sourceDataset === "q2" && d.id !== "Sailor");
+
+    rightNodes.sort((a, b) => getFirstYearOfInteraction(a.id.trim(), "out") - getFirstYearOfInteraction(b.id.trim(), "out"));
+
+    const oliviaIndex = rightNodes.findIndex(d => d.id.trim() === "Olivia Carter");
+    const skyIndex = rightNodes.findIndex(d => d.id.trim() === "Skylar Brooks");
+    const isla = rightNodes.find(d => d.id.trim() === "Isla Quinn");
+    const ella = rightNodes.find(d => d.id.trim() === "Ella Parker");
+
+    rightNodes = rightNodes.filter(d => !["Isla Quinn", "Ella Parker"].includes(d.id.trim()));
+    if (skyIndex >= 0 && ella) {
+      const newSkyIndex = rightNodes.findIndex(d => d.id.trim() === "Skylar Brooks");
+      rightNodes.splice(newSkyIndex + 1, 0, ella);
+    }
+    if (oliviaIndex >= 0 && isla) {
+      const newOliviaIndex = rightNodes.findIndex(d => d.id.trim() === "Olivia Carter");
+      rightNodes.splice(newOliviaIndex + 1, 0, isla);
+    }
+
+    leftNodes.sort((a, b) => getFirstYearOfInteraction(a.id.trim(), "in") - getFirstYearOfInteraction(b.id.trim(), "in"));
+
+    const totalLeft = leftNodes.length;
+    const totalRight = rightNodes.length;
+    leftNodes.forEach((d, i) => { d.x = 100 + i * ((centerX - 150) / totalLeft); d.y = arcY; });
+    centerNode.x = centerX; centerNode.y = arcY;
+    rightNodes.forEach((d, i) => { d.x = centerX + 150 + i * ((width - centerX - 200) / totalRight); d.y = arcY; });
+
+    const positionedNodes = [...leftNodes, centerNode, ...rightNodes];
+    const nodeMap = {}; positionedNodes.forEach(d => nodeMap[d.id.trim()] = d);
+
+    q2Grouped.forEach(([source, targets]) => {
+      targets.forEach(([target, detail]) => {
+        if (detail.total >= collabThreshold) {
+          arcs.push({
+            source,
+            target,
+            value: detail.total,
+            years: detail.years,
+            sourceDataset: "q2",
+            level: nodeMap[target]?.group || "N/A"
+          });
+        }
+      });
+    });
+    svg.selectAll(".arc")
+      .data(arcs)
+      .enter()
+      .append("path")
+      .attr("class", "arc")
+      .attr("fill", "none")
+      .attr("stroke", d => {
+        if (d.sourceDataset === "q1") return "#3498db"; // Influence
+        if (d.level === "Level 1") return "#2ecc71";     // Green
+        if (d.level === "Level 2") return "#f1c40f";     // Yellow
+        return "#ccc";
+      })
+      .attr("stroke-width", d => Math.sqrt(d.value) + 1)
+      .attr("d", d => {
+        const src = nodeMap[d.source.trim()];
+        const tgt = nodeMap[d.target.trim()];
+        const dx = tgt.x - src.x;
+        const dr = Math.abs(dx) / 2;
+        return `M${src.x},${src.y}A${dr},${dr} 0 0,1 ${tgt.x},${tgt.y}`;
+      })
+      .on("mouseover", (event, d) => {
+  let firstYear;
+
+if (d.sourceDataset === "q1") {
+  
+  firstYear = getFirstYearOfInteraction(d.source.trim(), "in"); 
+} else if (d.sourceDataset === "q2") {
+  firstYear = getFirstYearOfInteraction(d.target.trim(), "out");
+
+  if (firstYear === null || firstYear === undefined) {
+    const arcYears = Array.isArray(d.years)
+      ? d.years
+      : Object.keys(d.years).map(Number);
+    firstYear = d3.min(arcYears);
+  }
+}
+
+  const years = d.sourceDataset === "q1"
+    ? Object.keys(d.years).map(Number)
+    : d.years;
+
+  tooltip.style("opacity", 1)
+    .html(`<strong>${d.source} → ${d.target}</strong><br/>
+           First appearance in Sailor's life: ${firstYear}<br/>
+           Total: ${d.value}<br/>
+           Collaboration year(s): ${years.join(", ")}`)
+    .style("left", (event.pageX + 10) + "px")
+    .style("top", (event.pageY - 30) + "px");
+})
+.on("mouseout", () => tooltip.style("opacity", 0));
+
+
+    const visibleNodeIds = new Set();
+    arcs.forEach(d => {
+      visibleNodeIds.add(d.source.trim());
+      visibleNodeIds.add(d.target.trim());
+    });
+
+    const node = svg.selectAll(".node")
+      .data(positionedNodes.filter(d => visibleNodeIds.has(d.id.trim())))
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.x},${d.y})`);
+
+    node.append("circle")
+      .attr("r", d =>
+        d.id === "Sailor" ? 8 :
+        (d.sourceDataset === "q2" && (d.changedFolk || d.changedNotable) ? 7 : 5)
+      )
+      .attr("fill", d => {
+        if (d.id === "Sailor") return "black";
+        if (d.sourceDataset === "q2") {
+          if (d.changedFolk || d.changedNotable) return "#9b59b6"; // Mor node
+          return "#aaa";
+        }
+        return "#888";
+      })
+      .on("mouseover", (event, d) => {
+        let html = `<strong>${d.id}</strong><br/>`;
+        if (d.sourceDataset === "q2") {
+          html += `Oceanus Folk Work Increase: ${d.changedFolk ? "✅ Yes" : "❌ No"}<br/>
+                   Notable Work Increase: ${d.changedNotable ? "✅ Yes" : "❌ No"}`;
+        }
+        tooltip.style("opacity", 1)
+          .html(html)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 30) + "px");
+      })
+      .on("mouseout", () => tooltip.style("opacity", 0));
+
+    // Bar
+    svg.selectAll(".influence-bar")
+      .data(leftNodes.filter(d => visibleNodeIds.has(d.id.trim())))
+      .enter()
+      .append("rect")
+      .attr("x", d => d.x - 3)
+      .attr("width", 6)
+      .attr("y", arcY + 20)
+      .attr("height", d => {
+        const arc = arcs.find(a => a.source === d.id);
+        return arc ? Math.sqrt(arc.value) * 10 : 0;
+      })
+      .attr("fill", "#3498db")
+      .attr("opacity", 0.6)
+      .on("mouseover", (event, d) => {
+        const arc = arcs.find(a => a.source === d.id);
+        if (arc) {
+          tooltip.style("opacity", 1)
+            .html(`<strong>${d.id} → Sailor</strong><br/>Total: ${arc.value}`)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 30) + "px");
+        }
+      })
+      .on("mouseout", () => tooltip.style("opacity", 0));
+
+    svg.selectAll(".influence-label")
+      .data(leftNodes.filter(d => visibleNodeIds.has(d.id.trim())))
+      .enter()
+      .append("text")
+      .attr("class", "bar-label")
+      .attr("x", d => d.x)
+      .attr("y", d => {
+        const arc = arcs.find(a => a.source === d.id);
+        const h = arc ? Math.sqrt(arc.value) * 10 : 0;
+        return arcY + 20 + h + 7;
+      })
+      .attr("transform", d => {
+        const arc = arcs.find(a => a.source === d.id);
+        const h = arc ? Math.sqrt(arc.value) * 10 + 5 : 0;
+        return `rotate(-90,${d.x},${arcY + 20 + h})`;
+      })
+      .text(d => d.id);
+
+    // Bar
+    svg.selectAll(".collab-bar")
+      .data(rightNodes.filter(d => visibleNodeIds.has(d.id.trim())))
+      .enter()
+      .append("rect")
+      .attr("x", d => d.x - 3)
+      .attr("width", 6)
+      .attr("y", arcY + 20)
+      .attr("height", d => {
+        const arc = arcs.find(a => a.target === d.id);
+        return arc ? Math.sqrt(arc.value) * 10 : 0;
+      })
+      .attr("fill", d => {
+        const arc = arcs.find(a => a.target === d.id);
+        if (!arc) return "#ccc";
+        if (arc.level === "Level 1") return "#2ecc71";
+        if (arc.level === "Level 2") return "#f1c40f";
+        return "#ccc";
+      })
+      .attr("opacity", 0.6)
+      .on("mouseover", (event, d) => {
+        const arc = arcs.find(a => a.target === d.id);
+        if (arc) {
+          tooltip.style("opacity", 1)
+            .html(`<strong>Sailor → ${d.id}</strong><br/>Total: ${arc.value}`)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 30) + "px");
+        }
+      })
+      .on("mouseout", () => tooltip.style("opacity", 0));
+
+    svg.selectAll(".collab-label")
+      .data(rightNodes.filter(d => visibleNodeIds.has(d.id.trim())))
+      .enter()
+      .append("text")
+      .attr("class", "bar-label")
+      .attr("x", d => d.x)
+      .attr("y", d => {
+        const arc = arcs.find(a => a.target === d.id);
+        const h = arc ? Math.sqrt(arc.value) * 10 : 0;
+        return arcY + 20 + h + 7;
+      })
+      .attr("transform", d => {
+        const arc = arcs.find(a => a.target === d.id);
+        const h = arc ? Math.sqrt(arc.value) * 10 + 5 : 0;
+        return `rotate(-90,${d.x},${arcY + 20 + h})`;
+      })
+      .text(d => d.id);
+  }
+
+  document.querySelectorAll('#influenceFilter input, #collabFilter input').forEach(input => {
+    input.addEventListener('change', draw);
+  });
+
+  draw();
+});
+</script>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Oceanus Folk's Influence Across Genres and Artists - Sankey Diagram</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 0; }
+    #container { display: flex; }
+    svg { flex: 1; }
+    #sidebar {
+      width: 300px;
+      padding: 10px;
+      border-left: 1px solid #ccc;
+      background: #f5f5f5;
+    }
+    .tooltip {
+      position: absolute;
+      text-align: left;
+      padding: 8px;
+      font-size: 13px;
+      background: white;
+      border: 1px solid #999;
+      border-radius: 4px;
+      pointer-events: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .member-list {
+      list-style-type: circle;
+      padding-left: 20px;
+      margin-top: 2px;
+      margin-bottom: 10px;
+      color: #444;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="padding:10px;">Oceanus Folk's Influence Across Genres and Artists</h2>
+  <div id="container">
+    <svg width="1000" height="700"></svg>
+    <div id="sidebar">
+      <h3>Top 11 Artists</h3>
+      <ol id="top-artists-list">
+        <li><a href="#" data-artist="Blazing Collective">Blazing Collective</a> (5)
+          <ul class="member-list">
+            <li>Ming Zhao</li>
+            <li>Jonathan Diaz</li>
+          </ul>
+        </li>
+        <li><a href="#" data-artist="Gang Tan">Gang Tan</a> (4)</li>
+        <li><a href="#" data-artist="Guiying Liao">Guiying Liao</a> (4)</li>
+        <li><a href="#" data-artist="Joker's Smile">Joker's Smile</a> (4)
+          <ul class="member-list">
+            <li>Nicola Bernetti</li>
+            <li>Vincentio Gentili</li>
+            <li>Guglielmo Canetta</li>
+            <li>Serena Lettiere</li>
+          </ul>
+        </li>
+        <li><a href="#" data-artist="Ming Ding">Ming Ding</a> (4)</li>
+        <li><a href="#" data-artist="Ming Zhao">Ming Zhao</a> (4)</li>
+        <li><a href="#" data-artist="Na Ren">Na Ren</a> (4)</li>
+        <li><a href="#" data-artist="Qiang Fang">Qiang Fang</a> (4)</li>
+        <li><a href="#" data-artist="Wei Liang">Wei Liang</a> (4)</li>
+        <li><a href="#" data-artist="Xia Zhu">Xia Zhu</a> (4)</li>
+        <li><a href="#" data-artist="Xiuying Yao">Xiuying Yao</a> (4)</li>
+      </ol>
+      <div id="artist-info">
+        <em>Click an artist name to see details here</em>
+        <div id="artist-details"></div>
+      
+      </div>
+    </div>
+  </div>
+  <script>
+    const genreToMain = {
+      "Dream Pop": "Pop", "Synthpop": "Pop", "Indie Pop": "Pop",
+      "Indie Rock": "Rock", "Alternative Rock": "Rock", "Post-Apocalyptic Folk": "Folk",
+      "Desert Rock": "Rock", "Jazz Surf Rock": "Rock", "Doom Metal": "Metal",
+      "Speed Metal": "Metal", "Symphonic Metal": "Metal", "Darkwave": "Electronic",
+      "Synthwave": "Electronic", "Space Rock": "Rock", "Americana": "Folk",
+      "Indie Folk": "Folk"
+    };
+
+    const genreColorMap = {
+      "Metal": "#5470C6",
+      "Folk": "#91CC75",
+      "Rock": "#FAC858",
+      "Pop": "#EE6666",
+      "Electronic": "#73C0DE"
+    };
+
+    function getColor(name) {
+      return genreColorMap[name] || "#999";  // default gri
+    }
+
+    const svg = d3.select("svg"), width = +svg.attr("width"), height = +svg.attr("height");
+    const tooltip = d3.select("body").append("div").attr("class", "tooltip").style("opacity", 0);
+    d3.json("task2_b.json").then(data => {
+      const allRoles = [], titleByMainGenre = new Map();
+      const artistRoleMap = new Map();
+      const artistRoleCounts = {};
+
+      const roleColorScale = d3.scaleLinear()
+        .domain([3, 5])
+        .range(["#99ccff","#003366"]);
+
+      data.artists.forEach(a => {
+        const filteredRoles = a.roles.filter(r => genreToMain[r.genre]);
+        if (filteredRoles.length > 0) artistRoleMap.set(a.id, filteredRoles);
+        artistRoleCounts[a.id] = filteredRoles.length;
+
+        filteredRoles.forEach(r => {
+          const mainGenre = genreToMain[r.genre];
+          allRoles.push({ artist: a.id, genre: r.genre, main_genre: mainGenre, title: r.title, role: r.role });
+
+          if (!titleByMainGenre.has(mainGenre)) titleByMainGenre.set(mainGenre, new Set());
+          titleByMainGenre.get(mainGenre).add(r.title);
+        });
+      });
+
+      const artistCounts = d3.rollups(allRoles, v => v.length, d => d.artist);
+      const artistValueMap = new Map(artistCounts);
+      const filteredArtists = artistCounts.filter(([_, c]) => c >= 3).map(d => d[0]);
+
+      const links = [];
+
+      titleByMainGenre.forEach((titleSet, mainGenre) => {
+        links.push({
+          source: "Oceanus Folk",
+          target: mainGenre,
+          value: titleSet.size,
+          label: `${titleSet.size} unique works`
+        });
+      });
+
+      const genreArtistMap = d3.rollups(
+        allRoles.filter(d => filteredArtists.includes(d.artist)),
+        v => ({
+          count: v.length,
+          roles: Array.from(new Set(v.map(x => x.role))).join(", ")
+        }),
+        d => d.main_genre,
+        d => d.artist
+      );
+
+      genreArtistMap.forEach(([mainGenre, artistData]) => {
+        artistData.forEach(([artist, info]) => {
+          links.push({
+            source: mainGenre,
+            target: artist,
+            value: info.count,
+            label: `${artist}<br/>${info.count} roles<br/>${info.roles}`
+          });
+        });
+      });
+
+      const nodes = Array.from(new Set(links.flatMap(d => [d.source, d.target]))).map(d => ({
+        name: d,
+        value: artistValueMap.get(d) || 1
+      }));
+
+      const nodeIndex = new Map(nodes.map((d, i) => [d.name, i]));
+      const sankeyLinks = links.map(d => ({
+        source: nodeIndex.get(d.source),
+        target: nodeIndex.get(d.target),
+        value: d.value,
+        label: d.label
+      }));
+
+      const artistOrder = new Map(
+        Array.from(Object.entries(artistRoleCounts))
+          .filter(([name]) => filteredArtists.includes(name))
+          .sort(([, a], [, b]) => b - a)
+          .map(([name], index) => [name, index])
+      );
+
+      const sankey = d3.sankey()
+        .nodeWidth(20)
+        .nodePadding(14)
+        .iterations(64)
+        .extent([[1, 20], [width - 1, height - 6]])
+        .nodeSort((a, b) => {
+          const aOrder = artistOrder.has(a.name) ? artistOrder.get(a.name) : Infinity;
+          const bOrder = artistOrder.has(b.name) ? artistOrder.get(b.name) : Infinity;
+          return d3.ascending(aOrder, bOrder);
+        });
+
+      const graph = sankey({
+        nodes: nodes.map(d => Object.assign({}, d)),
+        links: sankeyLinks
+      });
+
+      svg.append("g")
+        .selectAll("rect")
+        .data(graph.nodes)
+        .join("rect")
+        .attr("x", d => d.x0)
+        .attr("y", d => d.y0)
+        .attr("height", d => d.y1 - d.y0)
+        .attr("width", d => d.x1 - d.x0)
+        .attr("fill", d => artistRoleCounts[d.name] ? roleColorScale(artistRoleCounts[d.name]) : getColor(d.name))
+
+        .filter(d => artistRoleCounts[d.name])
+        .remove();
+
+      svg.append("g")
+        .attr("fill", "none")
+        .selectAll("path")
+        .data(graph.links)
+        .join("path")
+        .attr("d", d3.sankeyLinkHorizontal())
+        .attr("stroke", d => getColor(d.source.name))
+        .attr("stroke-width", d => Math.max(1, d.width))
+        .attr("stroke-opacity", 0.5)
+        .on("mouseover", function (event, d) {
+          tooltip.transition().duration(200).style("opacity", 1);
+          tooltip.html(d.label || "")
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", function () {
+          tooltip.transition().duration(300).style("opacity", 0);
+        });
+
+      const maxBarWidth = 100;
+      const labelGroup = svg.append("g")
+        .style("font", "12px sans-serif")
+        .selectAll("g")
+        .data(graph.nodes)
+        .join("g")
+        .attr("transform", d => `translate(${d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6},${(d.y0 + d.y1) / 2})`);
+
+      labelGroup.append("text")
+        .attr("dy", "0.35em")
+        .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+        .style("cursor", "pointer")
+        .text(d => d.name)
+        .on("click", function (event, d) {
+          const roles = artistRoleMap.get(d.name);
+          if (!roles) return;
+          const detailHTML = `<h4>${d.name}</h4>` + roles.map(r =>
+            `<p><strong>${r.genre}</strong>: "${r.title}" – <em>${r.role}</em></p>`
+          ).join("");
+          d3.select("#artist-details").html(detailHTML);
+        });
+
+      labelGroup.filter(d => artistRoleCounts[d.name]).each(function (d) {
+        const g = d3.select(this);
+        const squareSize = 10;
+        const barWidth = Math.min(maxBarWidth, (artistRoleCounts[d.name] / 5) * maxBarWidth);
+        const fillColor = roleColorScale(artistRoleCounts[d.name]);
+
+        g.append("rect")
+          .attr("x", 10)
+          .attr("y", -squareSize / 2)
+          .attr("width", squareSize)
+          .attr("height", squareSize)
+          .attr("fill", fillColor);
+
+        g.append("rect")
+          .attr("x", 10 + squareSize + 4)
+          .attr("y", -squareSize / 2 + 1)
+          .attr("width", barWidth)
+          .attr("height", squareSize - 2)
+          .attr("fill", fillColor);
+
+        g.append("text")
+          .attr("x", 10 + squareSize + 4 + barWidth + 4)
+          .attr("dy", "0.35em")
+          .attr("font-size", "10px")
+          .attr("fill", "#000")
+          .text(artistRoleCounts[d.name]);
+      });
+
+      d3.selectAll("#top-artists-list a").on("click", function (event) {
+        event.preventDefault();
+        const artist = this.getAttribute("data-artist");
+        const roles = artistRoleMap.get(artist);
+        if (!roles) return;
+        const detailHTML = `<h4>${artist}</h4>` + roles.map(r =>
+          `<p><strong>${r.genre}</strong>: "${r.title}" – <em>${r.role}</em></p>`
+        ).join("");
+        d3.select("#artist-info").html(detailHTML);
+      });
+    });
+  </script>
+</body>
+</html>
